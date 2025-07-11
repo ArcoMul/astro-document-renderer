@@ -1,0 +1,18 @@
+import { render } from "@testing-library/react";
+import { clean } from "./clean";
+import { experimental_AstroContainer as AstroContainer } from "astro/container";
+import { astroConfig } from "./config";
+import DocumentRenderer from "../DocumentRenderer.astro";
+import { DocumentRenderer as ReactDocumentRenderer } from "@keystone-6/document-renderer";
+
+export default async function (document: Record<string, any>) {
+  const react = render(<ReactDocumentRenderer document={document} />);
+  const container = await AstroContainer.create({ astroConfig });
+  const astro = await container.renderToString(DocumentRenderer, {
+    props: { document },
+  });
+  return {
+    react: clean(react.container.innerHTML),
+    astro: clean(astro),
+  };
+}

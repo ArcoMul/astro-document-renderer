@@ -1,0 +1,172 @@
+---
+interface Props {
+  document: Node[];
+  renderers?: any;
+  componentBlocks?: any;
+}
+
+type Mark =
+  | "bold"
+  | "italic"
+  | "underline"
+  | "strikethrough"
+  | "code"
+  | "superscript"
+  | "subscript"
+  | "keyboard";
+
+const inline = {
+  bold: "strong",
+  code: "code",
+  keyboard: "kbd",
+  strikethrough: "s",
+  italic: "em",
+  link: "a",
+  subscript: "sub",
+  superscript: "sup",
+  underline: "u",
+  relationship: "span",
+  // relationship: ({ data }) => {
+  //   return <span>{data?.label || data?.id}</span>;
+  // },
+};
+
+export type Node = {
+  type: string;
+  component: string;
+  props: any;
+  children: Node[];
+  layout?: number[];
+  level?: number;
+  text?: string;
+  [key: string]: any;
+};
+
+const { document, renderers, componentBlocks = {} } = Astro.props;
+---
+
+{
+  document.map((node) => {
+    if (node.text) {
+      let child = node.text;
+      (Object.keys(inline) as (keyof typeof inline)[]).forEach((markName) => {
+        if (
+          markName !== "link" &&
+          markName !== "relationship" &&
+          node[markName]
+        ) {
+          const Mark = inline[markName];
+          child = `<${Mark}>${child}</${Mark}>`;
+        }
+      });
+      return <Fragment set:html={child} />;
+    } else if (node.type) {
+      switch (node.type as string) {
+        case "heading": {
+          const Heading = `h${node.level}`;
+          return (
+            <Heading>
+              <Astro.self document={node.children} />
+            </Heading>
+          );
+        }
+        case "paragraph": {
+          return (
+            <p>
+              <Astro.self document={node.children} />
+            </p>
+          );
+        }
+        case "ordered-list": {
+          return (
+            <ol>
+              <Astro.self document={node.children} />
+            </ol>
+          );
+        }
+        case "unordered-list": {
+          return (
+            <ul>
+              <Astro.self document={node.children} />
+            </ul>
+          );
+        }
+        case "list-item": {
+          return (
+            <li>
+              <Astro.self document={node.children} />
+            </li>
+          );
+        }
+        case "paragraph": {
+          return (
+            <p>
+              <Astro.self document={node.children} />
+            </p>
+          );
+        }
+        case "code": {
+          // prettier-ignore
+          return (
+            <pre><Astro.self document={node.children} /></pre>
+          );
+        }
+        case "link": {
+          return (
+            <a href={node.href}>
+              <Astro.self document={node.children} />
+            </a>
+          );
+        }
+        case "layout": {
+          return (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: (node.layout || [1])
+                  .map((x) => `${x}fr`)
+                  .join(" "),
+              }}
+            >
+              {node.children.map((child) => (
+                <div>
+                  <Astro.self
+                    document={child.children}
+                    componentBlocks={componentBlocks}
+                  />
+                </div>
+              ))}
+            </div>
+          );
+        }
+        case "component-block": {
+          const Component = componentBlocks[node.component];
+          if (Component) {
+            return (
+              <Component
+                {...node.props}
+                getDocument={(key: string) => {
+                  if (!node.children) return null;
+                  const child = node.children.find(
+                    (child) => child.propPath[0] === key
+                  );
+                  if (child) {
+                    return child.children;
+                  }
+                  return null;
+                }}
+              />
+            );
+          }
+        }
+        default: {
+          if (node.children) {
+            return <Astro.self document={node.children} />;
+          }
+        }
+      }
+    } else {
+      // return <p>Error {JSON.stringify(node, null, 2)}</p>;
+    }
+  })
+}
