@@ -5,11 +5,16 @@ import { astroConfig } from "./config";
 import DocumentRenderer from "../DocumentRenderer.astro";
 import { DocumentRenderer as ReactDocumentRenderer } from "@keystone-6/document-renderer";
 
-export default async function (document: Record<string, any>) {
-  const react = render(<ReactDocumentRenderer document={document} />);
+export default async function (
+  document: Record<string, any>,
+  renderers: { react: any; astro: any } = { react: {}, astro: {} }
+) {
+  const react = render(
+    <ReactDocumentRenderer document={document} renderers={renderers.react} />
+  );
   const container = await AstroContainer.create({ astroConfig });
   const astro = await container.renderToString(DocumentRenderer, {
-    props: { document },
+    props: { document, renderers: renderers.astro },
   });
   return {
     react: clean(react.container.innerHTML),

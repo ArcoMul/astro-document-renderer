@@ -1,0 +1,24 @@
+---
+import DocumentRenderer from "../DocumentRenderer.astro";
+
+interface Props {
+  children: any[];
+  layout: number[];
+  documentRendererProps: any;
+}
+
+const { documentRendererProps, children, layout } = Astro.props;
+---
+
+<div
+  class="grid"
+  style={{ "grid-template-columns": layout.map((l) => "1fr").join(" ") }}
+>
+  {
+    children.map((child) => (
+      <div>
+        <DocumentRenderer {...documentRendererProps} document={[child]} />
+      </div>
+    ))
+  }
+</div>

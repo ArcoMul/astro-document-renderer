@@ -1,7 +1,7 @@
 ---
 interface Props {
   document: Node[];
-  renderers?: any;
+  renderers?: { inline: any; block: any };
   componentBlocks?: any;
 }
 
@@ -15,20 +15,29 @@ type Mark =
   | "subscript"
   | "keyboard";
 
-const inline = {
-  bold: "strong",
-  code: "code",
-  keyboard: "kbd",
-  strikethrough: "s",
-  italic: "em",
-  link: "a",
-  subscript: "sub",
-  superscript: "sup",
-  underline: "u",
-  relationship: "span",
-  // relationship: ({ data }) => {
-  //   return <span>{data?.label || data?.id}</span>;
-  // },
+type Component<Props> = (props: Props) => any;
+
+type OnlyChildrenComponent = Component<{ children: Node }>;
+
+type MarkRenderers = { [Key in Mark]: OnlyChildrenComponent };
+
+const defaultRenderers = {
+  inline: {
+    bold: "strong",
+    code: "code",
+    keyboard: "kbd",
+    strikethrough: "s",
+    italic: "em",
+    link: "a",
+    subscript: "sub",
+    superscript: "sup",
+    underline: "u",
+    relationship: "span",
+    // relationship: ({ data }) => {
+    //   return <span>{data?.label || data?.id}</span>;
+    // },
+  },
+  block: {},
 };
 
 export type Node = {
@@ -42,83 +51,112 @@ export type Node = {
   [key: string]: any;
 };
 
-const { document, renderers, componentBlocks = {} } = Astro.props;
+const {
+  document,
+  renderers: _renderers = { inline: {}, block: {} },
+  componentBlocks,
+} = Astro.props;
+
+const renderers = {
+  inline: { ...defaultRenderers.inline, ..._renderers.inline },
+  block: { ...defaultRenderers.block, ..._renderers.block },
+};
 ---
 
 {
   document.map((node) => {
     if (node.text) {
       let child = node.text;
-      (Object.keys(inline) as (keyof typeof inline)[]).forEach((markName) => {
+      let marks = [];
+      (
+        Object.keys(renderers.inline) as (keyof typeof renderers.inline)[]
+      ).forEach((markName) => {
         if (
           markName !== "link" &&
           markName !== "relationship" &&
           node[markName]
         ) {
-          const Mark = inline[markName];
-          child = `<${Mark}>${child}</${Mark}>`;
+          marks.push(renderers.inline[markName]);
+          // const Mark = renderers.inline[markName];
+          // child = <Mark>{child}</Mark>;
         }
       });
-      return <Fragment set:html={child} />;
+      return (
+        <>
+          {marks.length > 0
+            ? marks.reduce((child, Mark) => <Mark>{child}</Mark>, child)
+            : child}
+        </>
+      );
     } else if (node.type) {
       switch (node.type as string) {
         case "heading": {
           const Heading = `h${node.level}`;
           return (
             <Heading>
-              <Astro.self document={node.children} />
+              <Astro.self document={node.children} renderers={renderers} />
             </Heading>
           );
         }
         case "paragraph": {
           return (
             <p>
-              <Astro.self document={node.children} />
+              <Astro.self document={node.children} renderers={renderers} />
             </p>
           );
         }
         case "ordered-list": {
           return (
             <ol>
-              <Astro.self document={node.children} />
+              <Astro.self document={node.children} renderers={renderers} />
             </ol>
           );
         }
         case "unordered-list": {
           return (
             <ul>
-              <Astro.self document={node.children} />
+              <Astro.self document={node.children} renderers={renderers} />
             </ul>
           );
         }
         case "list-item": {
           return (
             <li>
-              <Astro.self document={node.children} />
+              <Astro.self document={node.children} renderers={renderers} />
             </li>
           );
         }
         case "paragraph": {
           return (
             <p>
-              <Astro.self document={node.children} />
+              <Astro.self document={node.children} renderers={renderers} />
             </p>
           );
         }
         case "code": {
           // prettier-ignore
           return (
-            <pre><Astro.self document={node.children} /></pre>
+            <pre><Astro.self document={node.children} renderers={renderers} /></pre>
           );
         }
         case "link": {
           return (
             <a href={node.href}>
-              <Astro.self document={node.children} />
+              <Astro.self document={node.children} renderers={renderers} />
             </a>
           );
         }
         case "layout": {
+          if (renderers.block.layout) {
+            const Component = renderers.block.layout;
+            return (
+              <Component
+                layout={node.layout}
+                children={node.children}
+                documentRendererProps={{ componentBlocks, renderers }}
+              />
+            );
+          }
           return (
             <div
               style={{
@@ -132,6 +170,7 @@ const { document, renderers, componentBlocks = {} } = Astro.props;
                 <div>
                   <Astro.self
                     document={child.children}
+                    renderers={renderers}
                     componentBlocks={componentBlocks}
                   />
                 </div>
@@ -161,7 +200,9 @@ const { document, renderers, componentBlocks = {} } = Astro.props;
         }
         default: {
           if (node.children) {
-            return <Astro.self document={node.children} />;
+            return (
+              <Astro.self document={node.children} renderers={renderers} />
+            );
           }
         }
       }
