@@ -1,9 +1,11 @@
 {
   "name": "astro-document-renderer",
-  "private": true,
-  "version": "0.1.0",
+  "private": false,
+  "version": "0.2.0",
   "type": "module",
+  "homepage": "https://github.com/ArcoMul/astro-document-renderer",
   "scripts": {
+    "build": "tsc",
     "test": "vitest"
   },
   "exports": {
@@ -27,6 +29,7 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "astro": "^4.0.0 || ^5.0.0"
+    "astro": "^4.0.0 || ^5.0.0",
+    "@keystone-6/core": "^6.0.0"
   }
 }

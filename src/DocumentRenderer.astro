@@ -1,9 +1,26 @@
 ---
+type Text = {
+  text: string;
+  [key: string]: unknown;
+};
+
+type Element = {
+  children: Node[];
+  [key: string]: unknown;
+};
+
+type Node = Element | Text;
+
 interface Props {
   document: Node[];
-  renderers?: { inline: any; block: any };
+  renderers?: {
+    inline?: Partial<Renderers["inline"]>;
+    block?: Partial<Renderers["block"]>;
+  };
   componentBlocks?: any;
 }
+
+type Component<Props> = (props: Props) => any;
 
 type Mark =
   | "bold"
@@ -15,11 +32,46 @@ type Mark =
   | "subscript"
   | "keyboard";
 
-type Component<Props> = (props: Props) => any;
-
-type OnlyChildrenComponent = Component<{ children: Node }>;
+type OnlyChildrenComponent = Component<{ children: Node }> | string;
 
 type MarkRenderers = { [Key in Mark]: OnlyChildrenComponent };
+
+interface Renderers {
+  inline: {
+    link: Component<{ children: Node; href: string }> | "a";
+    relationship:
+      | Component<{
+          relationship: string;
+          data: {
+            id: string;
+            label: string | undefined;
+            data: Record<string, any> | undefined;
+          } | null;
+        }>
+      | "span";
+  } & MarkRenderers;
+  block: {
+    block: OnlyChildrenComponent;
+    paragraph: Component<{
+      children: Node;
+      textAlign: "center" | "end" | undefined;
+    }>;
+    blockquote: OnlyChildrenComponent;
+    code: Component<{ children: string }>;
+    layout: Component<{
+      layout: [number, ...number[]];
+      children: Element[];
+      documentRendererProps: Pick<Props, "renderers" | "componentBlocks">;
+    }>;
+    divider: Component<{}>;
+    heading: Component<{
+      level: 1 | 2 | 3 | 4 | 5 | 6;
+      children: Node;
+      textAlign: "center" | "end" | undefined;
+    }>;
+    list: Component<{ type: "ordered" | "unordered"; children: Element[] }>;
+  };
+}
 
 const defaultRenderers = {
   inline: {
@@ -40,26 +92,20 @@ const defaultRenderers = {
   block: {},
 };
 
-export type Node = {
-  type: string;
-  component: string;
-  props: any;
-  children: Node[];
-  layout?: number[];
-  level?: number;
-  text?: string;
-  [key: string]: any;
-};
-
 const {
   document,
   renderers: _renderers = { inline: {}, block: {} },
   componentBlocks,
 } = Astro.props;
 
+console.log("dddd", document);
+
 const renderers = {
   inline: { ...defaultRenderers.inline, ..._renderers.inline },
   block: { ...defaultRenderers.block, ..._renderers.block },
+} as {
+  inline: Partial<Renderers["inline"]>;
+  block: Partial<Renderers["block"]>;
 };
 ---
 
@@ -67,20 +113,21 @@ const renderers = {
   document.map((node) => {
     if (node.text) {
       let child = node.text;
-      let marks = [];
-      (
-        Object.keys(renderers.inline) as (keyof typeof renderers.inline)[]
-      ).forEach((markName) => {
-        if (
-          markName !== "link" &&
-          markName !== "relationship" &&
-          node[markName]
-        ) {
-          marks.push(renderers.inline[markName]);
-          // const Mark = renderers.inline[markName];
-          // child = <Mark>{child}</Mark>;
+      let marks: OnlyChildrenComponent[] = [];
+      (Object.keys(renderers.inline) as (keyof Renderers["inline"])[]).forEach(
+        (markName) => {
+          if (
+            markName !== "link" &&
+            markName !== "relationship" &&
+            node[markName] &&
+            renderers.inline[markName]
+          ) {
+            marks.push(renderers.inline[markName]);
+            // const Mark = renderers.inline[markName];
+            // child = <Mark>{child}</Mark>;
+          }
         }
-      });
+      );
       return (
         <>
           {marks.length > 0
@@ -94,55 +141,76 @@ const renderers = {
           const Heading = `h${node.level}`;
           return (
             <Heading>
-              <Astro.self document={node.children} renderers={renderers} />
+              <Astro.self
+                document={node.children as Node[]}
+                renderers={renderers}
+              />
             </Heading>
           );
         }
         case "paragraph": {
           return (
             <p>
-              <Astro.self document={node.children} renderers={renderers} />
+              <Astro.self
+                document={node.children as Node[]}
+                renderers={renderers}
+              />
             </p>
           );
         }
         case "ordered-list": {
           return (
             <ol>
-              <Astro.self document={node.children} renderers={renderers} />
+              <Astro.self
+                document={node.children as Node[]}
+                renderers={renderers}
+              />
             </ol>
           );
         }
         case "unordered-list": {
           return (
             <ul>
-              <Astro.self document={node.children} renderers={renderers} />
+              <Astro.self
+                document={node.children as Node[]}
+                renderers={renderers}
+              />
             </ul>
           );
         }
         case "list-item": {
           return (
             <li>
-              <Astro.self document={node.children} renderers={renderers} />
+              <Astro.self
+                document={node.children as Node[]}
+                renderers={renderers}
+              />
             </li>
           );
         }
         case "paragraph": {
           return (
             <p>
-              <Astro.self document={node.children} renderers={renderers} />
+              <Astro.self
+                document={node.children as Node[]}
+                renderers={renderers}
+              />
             </p>
           );
         }
         case "code": {
           // prettier-ignore
           return (
-            <pre><Astro.self document={node.children} renderers={renderers} /></pre>
+            <pre><Astro.self document={node.children as Node[]} renderers={renderers} /></pre>
           );
         }
         case "link": {
           return (
-            <a href={node.href}>
-              <Astro.self document={node.children} renderers={renderers} />
+            <a href={node.href as string}>
+              <Astro.self
+                document={node.children as Node[]}
+                renderers={renderers}
+              />
             </a>
           );
         }
@@ -151,8 +219,8 @@ const renderers = {
             const Component = renderers.block.layout;
             return (
               <Component
-                layout={node.layout}
-                children={node.children}
+                layout={node.layout as [number, ...number[]]}
+                children={node.children as Element[]}
                 documentRendererProps={{ componentBlocks, renderers }}
               />
             );
@@ -161,12 +229,12 @@ const renderers = {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: (node.layout || [1])
+                gridTemplateColumns: ((node.layout as []) || [1])
                   .map((x) => `${x}fr`)
                   .join(" "),
               }}
             >
-              {node.children.map((child) => (
+              {(node.children as Element[]).map((child) => (
                 <div>
                   <Astro.self
                     document={child.children}
@@ -179,7 +247,7 @@ const renderers = {
           );
         }
         case "component-block": {
-          const Component = componentBlocks[node.component];
+          const Component = componentBlocks[node.component as string];
           if (Component) {
             return (
               <Component
@@ -201,7 +269,10 @@ const renderers = {
         default: {
           if (node.children) {
             return (
-              <Astro.self document={node.children} renderers={renderers} />
+              <Astro.self
+                document={node.children as Node[]}
+                renderers={renderers}
+              />
             );
           }
         }
