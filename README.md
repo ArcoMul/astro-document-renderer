@@ -1,6 +1,8 @@
 # Astro Document Renderer for Keystone 6
 
-The Astro variant of [@keystone-6/document-renderer](https://github.com/keystonejs/keystone/tree/main/packages/document-renderer). Renders Keystone 6 Document format using native Astro Components.
+The Astro variant of
+[@keystone-6/document-renderer](https://github.com/keystonejs/keystone/tree/main/packages/document-renderer).
+Renders Keystone 6 Document format using native Astro Components.
 
 - Allows using native Astro features (`Astro.locals`)
 - Allows using Astro library components (`<Image>`/`<Picture>`)
@@ -17,7 +19,7 @@ $ npm install astro-document-renderer
 
 ```astro
 ---
-import DocumentRenderer from "astro-document-renderer";
+import { DocumentRenderer } from "astro-document-renderer";
 const { slug } = Astro.params;
 const post = await context.query.Post.findOne({
   where: { slug },
@@ -25,7 +27,9 @@ const post = await context.query.Post.findOne({
 });
 ---
 <DocumentRenderer
-  document={post.content.document}
+  document={page.content.document}
+  renderers={{ block: { layout: CustomColumns } }}
+  componentBlocks={{ header: Header }}
 />
 ```
 
