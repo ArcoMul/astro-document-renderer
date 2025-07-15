@@ -14,7 +14,6 @@ export default async function (
     <ReactDocumentRenderer document={document} renderers={renderers.react} />
   );
   const container = await AstroContainer.create({ astroConfig });
-  console.log("document", document);
   const astro = await container.renderToString(DocumentRenderer, {
     props: { document, renderers: renderers.astro },
   });
