@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { clean } from "./clean";
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { astroConfig } from "./config";
-import DocumentRenderer from "../DocumentRenderer.astro";
+import DocumentRenderer from "../../src/DocumentRenderer.astro";
 import { DocumentRenderer as ReactDocumentRenderer } from "@keystone-6/document-renderer";
 
 export default async function (

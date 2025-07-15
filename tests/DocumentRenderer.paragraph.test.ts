@@ -1,8 +1,4 @@
 import { expect, test } from "vitest";
-import { experimental_AstroContainer as AstroContainer } from "astro/container";
-import DocumentRenderer from "./DocumentRenderer.astro";
-import { astroConfig } from "./util/config";
-import { clean } from "./util/clean";
 import render from "./util/render";
 
 test("can render a paragraph", async () => {
