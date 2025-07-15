@@ -1,4 +1,6 @@
 ---
+import type { AstroComponentFactory } from "astro/runtime/server/index.js";
+
 type Text = {
   text: string;
   [key: string]: unknown;
@@ -20,8 +22,6 @@ interface Props {
   componentBlocks?: any;
 }
 
-type Component<Props> = (props: Props) => any;
-
 type Mark =
   | "bold"
   | "italic"
@@ -32,44 +32,24 @@ type Mark =
   | "subscript"
   | "keyboard";
 
-type OnlyChildrenComponent = Component<{ children: Node }> | string;
+type OnlyChildrenComponent = AstroComponentFactory;
 
 type MarkRenderers = { [Key in Mark]: OnlyChildrenComponent };
 
 interface Renderers {
   inline: {
-    link: Component<{ children: Node; href: string }> | "a";
-    relationship:
-      | Component<{
-          relationship: string;
-          data: {
-            id: string;
-            label: string | undefined;
-            data: Record<string, any> | undefined;
-          } | null;
-        }>
-      | "span";
+    link: AstroComponentFactory | "a";
+    relationship: AstroComponentFactory | "span";
   } & MarkRenderers;
   block: {
     block: OnlyChildrenComponent;
-    paragraph: Component<{
-      children: Node;
-      textAlign: "center" | "end" | undefined;
-    }>;
+    paragraph: AstroComponentFactory;
     blockquote: OnlyChildrenComponent;
-    code: Component<{ children: string }>;
-    layout: Component<{
-      layout: [number, ...number[]];
-      children: Element[];
-      documentRendererProps: Pick<Props, "renderers" | "componentBlocks">;
-    }>;
-    divider: Component<{}>;
-    heading: Component<{
-      level: 1 | 2 | 3 | 4 | 5 | 6;
-      children: Node;
-      textAlign: "center" | "end" | undefined;
-    }>;
-    list: Component<{ type: "ordered" | "unordered"; children: Element[] }>;
+    code: AstroComponentFactory;
+    layout: AstroComponentFactory;
+    divider: AstroComponentFactory;
+    heading: AstroComponentFactory;
+    list: AstroComponentFactory;
   };
 }
 
@@ -249,11 +229,11 @@ const renderers = {
           if (Component) {
             return (
               <Component
-                {...node.props}
+                {...(node.props as { [key: string]: any })}
                 getDocument={(key: string) => {
                   if (!node.children) return null;
-                  const child = node.children.find(
-                    (child) => child.propPath[0] === key
+                  const child = (node.children as Node[]).find(
+                    (child: Node) => (child.propPath as string[])[0] === key
                   );
                   if (child) {
                     return child.children;
