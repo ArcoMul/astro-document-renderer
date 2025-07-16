@@ -1,5 +1,9 @@
 ---
 import type { AstroComponentFactory } from "astro/runtime/server/index.js";
+import Layout from "./components/Layout.astro";
+import Heading from "./components/Heading.astro";
+import Paragraph from "./components/Paragraph.astro";
+import List from "./components/List.astro";
 
 type Text = {
   text: string;
@@ -69,7 +73,12 @@ const defaultRenderers = {
     //   return <span>{data?.label || data?.id}</span>;
     // },
   },
-  block: {},
+  block: {
+    heading: Heading,
+    layout: Layout,
+    paragraph: Paragraph,
+    list: List,
+  },
 };
 
 const {
@@ -83,7 +92,7 @@ const renderers = {
   block: { ...defaultRenderers.block, ..._renderers.block },
 } as {
   inline: Partial<Renderers["inline"]>;
-  block: Partial<Renderers["block"]>;
+  block: Renderers["block"];
 };
 ---
 
@@ -101,8 +110,6 @@ const renderers = {
             renderers.inline[markName]
           ) {
             marks.push(renderers.inline[markName]);
-            // const Mark = renderers.inline[markName];
-            // child = <Mark>{child}</Mark>;
           }
         }
       );
@@ -115,65 +122,13 @@ const renderers = {
       );
     } else if (node.type) {
       switch (node.type as string) {
-        case "heading": {
-          const Heading = `h${node.level}`;
-          return (
-            <Heading>
-              <Astro.self
-                document={node.children as Node[]}
-                renderers={renderers}
-              />
-            </Heading>
-          );
-        }
         case "paragraph": {
+          const Component = renderers.block.paragraph;
           return (
-            <p>
-              <Astro.self
-                document={node.children as Node[]}
-                renderers={renderers}
-              />
-            </p>
-          );
-        }
-        case "ordered-list": {
-          return (
-            <ol>
-              <Astro.self
-                document={node.children as Node[]}
-                renderers={renderers}
-              />
-            </ol>
-          );
-        }
-        case "unordered-list": {
-          return (
-            <ul>
-              <Astro.self
-                document={node.children as Node[]}
-                renderers={renderers}
-              />
-            </ul>
-          );
-        }
-        case "list-item": {
-          return (
-            <li>
-              <Astro.self
-                document={node.children as Node[]}
-                renderers={renderers}
-              />
-            </li>
-          );
-        }
-        case "paragraph": {
-          return (
-            <p>
-              <Astro.self
-                document={node.children as Node[]}
-                renderers={renderers}
-              />
-            </p>
+            <Component
+              children={node.children as Element[]}
+              documentRendererProps={{ componentBlocks, renderers }}
+            />
           );
         }
         case "code": {
@@ -182,46 +137,24 @@ const renderers = {
             <pre><Astro.self document={node.children as Node[]} renderers={renderers} /></pre>
           );
         }
-        case "link": {
+        case "layout": {
+          const Component = renderers.block.layout;
           return (
-            <a href={node.href as string}>
-              <Astro.self
-                document={node.children as Node[]}
-                renderers={renderers}
-              />
-            </a>
+            <Component
+              layout={node.layout as [number, ...number[]]}
+              children={node.children as Element[]}
+              documentRendererProps={{ componentBlocks, renderers }}
+            />
           );
         }
-        case "layout": {
-          if (renderers.block.layout) {
-            const Component = renderers.block.layout;
-            return (
-              <Component
-                layout={node.layout as [number, ...number[]]}
-                children={node.children as Element[]}
-                documentRendererProps={{ componentBlocks, renderers }}
-              />
-            );
-          }
+        case "heading": {
+          const Component = renderers.block.heading;
           return (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: ((node.layout as []) || [1])
-                  .map((x) => `${x}fr`)
-                  .join(" "),
-              }}
-            >
-              {(node.children as Element[]).map((child) => (
-                <div>
-                  <Astro.self
-                    document={child.children}
-                    renderers={renderers}
-                    componentBlocks={componentBlocks}
-                  />
-                </div>
-              ))}
-            </div>
+            <Component
+              level={node.level}
+              children={node.children as Element[]}
+              documentRendererProps={{ componentBlocks, renderers }}
+            />
           );
         }
         case "component-block": {
@@ -243,6 +176,27 @@ const renderers = {
               />
             );
           }
+        }
+        case "unordered-list":
+        case "ordered-list": {
+          const Component = renderers.block.list;
+          return (
+            <Component
+              type={node.type === "ordered-list" ? "ordered" : "unordered"}
+              children={node.children as Element[]}
+              documentRendererProps={{ componentBlocks, renderers }}
+            />
+          );
+        }
+        case "link": {
+          return (
+            <a href={node.href as string}>
+              <Astro.self
+                document={node.children as Node[]}
+                renderers={renderers}
+              />
+            </a>
+          );
         }
         default: {
           if (node.children) {

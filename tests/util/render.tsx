@@ -4,7 +4,6 @@ import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { astroConfig } from "./config";
 import DocumentRenderer from "../../src/DocumentRenderer.astro";
 import { DocumentRenderer as ReactDocumentRenderer } from "@keystone-6/document-renderer";
-import { a } from "vitest/dist/chunks/suite.d.FvehnV49.js";
 
 export default async function (
   document: any,

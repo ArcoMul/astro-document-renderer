@@ -1,0 +1,12 @@
+---
+import DocumentRenderer from "../../src/DocumentRenderer.astro";
+
+interface Props {
+  children: any[];
+  documentRendererProps: any;
+}
+
+const { children, documentRendererProps } = Astro.props;
+---
+
+<p><DocumentRenderer document={children} {...documentRendererProps} /></p>

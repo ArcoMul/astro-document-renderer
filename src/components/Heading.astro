@@ -1,0 +1,17 @@
+---
+import DocumentRenderer from "../../src/DocumentRenderer.astro";
+
+interface Props {
+  level: number;
+  children: any[];
+  documentRendererProps: any;
+}
+
+const { level, children, documentRendererProps } = Astro.props;
+
+const Element = `h${level}`;
+---
+
+<Element
+  ><DocumentRenderer document={children} {...documentRendererProps} /></Element
+>

@@ -1,0 +1,13 @@
+---
+import DocumentRenderer from "../../src/DocumentRenderer.astro";
+
+interface Props {
+  children: any[];
+  documentRendererProps: any;
+  type: "ordered" | "unordered";
+}
+
+const { children, documentRendererProps, type } = Astro.props;
+const Element = type === "ordered" ? "ol" : "ul";
+---
+<Element>{children.map((child) => (<li><DocumentRenderer document={[child]} {...documentRendererProps} /></li>))}</Element>
