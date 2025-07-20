@@ -1,0 +1,13 @@
+---
+interface Props {
+  relationship: string;
+  data: {
+    id: string;
+    label: string;
+    data: any;
+  };
+}
+const { relationship, data } = Astro.props;
+---
+
+<strong><i>{relationship}: {data.label}</i></strong>

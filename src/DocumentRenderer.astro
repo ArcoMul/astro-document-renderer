@@ -4,6 +4,7 @@ import Layout from "./components/Layout.astro";
 import Heading from "./components/Heading.astro";
 import Paragraph from "./components/Paragraph.astro";
 import List from "./components/List.astro";
+import Relationship from "./components/Relationship.astro";
 
 type Text = {
   text: string;
@@ -68,7 +69,7 @@ const defaultRenderers = {
     subscript: "sub",
     superscript: "sup",
     underline: "u",
-    relationship: "span",
+    relationship: Relationship,
     // relationship: ({ data }) => {
     //   return <span>{data?.label || data?.id}</span>;
     // },
@@ -185,6 +186,22 @@ const renderers = {
               type={node.type === "ordered-list" ? "ordered" : "unordered"}
               children={node.children as Element[]}
               documentRendererProps={{ componentBlocks, renderers }}
+            />
+          );
+        }
+        case "relationship": {
+          const Component =
+            renderers.inline.relationship ||
+            defaultRenderers.inline.relationship;
+          const data = node.data as any;
+          return (
+            <Component
+              relationship={node.relationship as string}
+              data={
+                data
+                  ? { id: data.id, label: data.label, data: data.data }
+                  : null
+              }
             />
           );
         }

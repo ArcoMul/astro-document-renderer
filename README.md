@@ -20,6 +20,9 @@ $ npm install astro-document-renderer
 ```astro
 ---
 import { DocumentRenderer } from "astro-document-renderer";
+import CustomColumns from "./components/CustomColumns.astro";
+import Header from "./components/Header.astro";
+
 const { slug } = Astro.params;
 const post = await context.query.Post.findOne({
   where: { slug },
