@@ -100,7 +100,11 @@ const renderers = {
 {
   document.map((node) => {
     if (node.text) {
-      let child = node.text;
+      // Get text (replace softline breaks for html line break elements)
+      let text = (node.text || "") as string;
+      text = text.replace(/\n/g, "<br />");
+
+      // Collection inline 'marks'
       let marks: OnlyChildrenComponent[] = [];
       (Object.keys(renderers.inline) as (keyof Renderers["inline"])[]).forEach(
         (markName) => {
@@ -114,11 +118,18 @@ const renderers = {
           }
         }
       );
+
+      // Render text wrapped in collected mark elements
       return (
         <>
-          {marks.length > 0
-            ? marks.reduce((child, Mark) => <Mark>{child}</Mark>, child)
-            : child}
+          {marks.length > 0 ? (
+            marks.reduce(
+              (child, Mark) => <Mark>{child}</Mark>,
+              <Fragment set:html={text} />
+            )
+          ) : (
+            <Fragment set:html={text} />
+          )}
         </>
       );
     } else if (node.type) {

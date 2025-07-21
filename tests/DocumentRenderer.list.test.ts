@@ -65,7 +65,7 @@ test("can render nested list items", async () => {
                       type: "list-item-content",
                       children: [
                         {
-                          text: "Sub item 1\n",
+                          text: "Sub item 1",
                         },
                       ],
                     },
