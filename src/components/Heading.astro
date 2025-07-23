@@ -2,16 +2,17 @@
 import DocumentRenderer from "../../src/DocumentRenderer.astro";
 
 interface Props {
+  textAlign: string;
   level: number;
   children: any[];
   documentRendererProps: any;
 }
 
-const { level, children, documentRendererProps } = Astro.props;
+const { textAlign, level, children, documentRendererProps } = Astro.props;
 
 const Element = `h${level}`;
 ---
 
-<Element
+<Element style={textAlign ? { textAlign } : undefined}
   ><DocumentRenderer document={children} {...documentRendererProps} /></Element
 >

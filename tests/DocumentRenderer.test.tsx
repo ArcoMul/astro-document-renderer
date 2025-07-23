@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import prettier from "prettier";
 import render from "./util/render";
 
 test("can render headings", async () => {
@@ -20,9 +21,13 @@ test("can render headings", async () => {
         },
       ],
       level: 2,
+      textAlign: "end",
     },
   ]);
-  expect(result.astro).toEqual(result.react);
+  const astro = await prettier.format(result.astro, { parser: "html" });
+  const react = await prettier.format(result.react, { parser: "html" });
+
+  expect(astro).toEqual(react);
 });
 
 test("can render code", async () => {
@@ -33,6 +38,26 @@ test("can render code", async () => {
         {
           text: "Code",
         },
+      ],
+    },
+  ]);
+  expect(result.astro).toEqual(result.react);
+});
+
+test("can render a link", async () => {
+  const result = await render([
+    {
+      type: "paragraph",
+      children: [
+        {
+          text: "Lorem ipsum ",
+        },
+        {
+          type: "link",
+          href: "mailto:example@example.com",
+          children: [{ text: "example@example.com" }],
+        },
+        { text: " sit amet." },
       ],
     },
   ]);

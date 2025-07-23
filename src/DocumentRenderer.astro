@@ -70,15 +70,14 @@ const defaultRenderers = {
     superscript: "sup",
     underline: "u",
     relationship: Relationship,
-    // relationship: ({ data }) => {
-    //   return <span>{data?.label || data?.id}</span>;
-    // },
   },
   block: {
     heading: Heading,
     layout: Layout,
     paragraph: Paragraph,
     list: List,
+    code: "pre",
+    divider: "hr",
   },
 };
 
@@ -134,6 +133,15 @@ const renderers = {
       );
     } else if (node.type) {
       switch (node.type as string) {
+        case "blockquote": {
+          const Component = renderers.block.blockquote;
+          return (
+            <Component
+              children={node.children as Element[]}
+              documentRendererProps={{ componentBlocks, renderers }}
+            />
+          );
+        }
         case "paragraph": {
           const Component = renderers.block.paragraph;
           return (
@@ -144,9 +152,10 @@ const renderers = {
           );
         }
         case "code": {
+          const Component = renderers.block.code;
           // prettier-ignore
           return (
-            <pre><Astro.self document={node.children as Node[]} renderers={renderers} /></pre>
+            <Component><Astro.self document={node.children as Node[]} renderers={renderers} /></Component>
           );
         }
         case "layout": {
@@ -159,10 +168,15 @@ const renderers = {
             />
           );
         }
+        case "divider": {
+          const Component = renderers.block.divider;
+          return <Component />;
+        }
         case "heading": {
           const Component = renderers.block.heading;
           return (
             <Component
+              textAlign={node.textAlign as any}
               level={node.level}
               children={node.children as Element[]}
               documentRendererProps={{ componentBlocks, renderers }}
@@ -175,6 +189,7 @@ const renderers = {
             return (
               <Component
                 {...(node.props as { [key: string]: any })}
+                documentRendererProps={{ componentBlocks, renderers }}
                 getDocument={(key: string) => {
                   if (!node.children) return null;
                   const child = (node.children as Node[]).find(
@@ -217,13 +232,15 @@ const renderers = {
           );
         }
         case "link": {
+          const Component =
+            renderers.inline.link || defaultRenderers.inline.link;
           return (
-            <a href={node.href as string}>
+            <Component href={node.href as string}>
               <Astro.self
                 document={node.children as Node[]}
                 renderers={renderers}
               />
-            </a>
+            </Component>
           );
         }
         default: {
@@ -238,7 +255,7 @@ const renderers = {
         }
       }
     } else {
-      // return <p>Error {JSON.stringify(node, null, 2)}</p>;
+      console.error("Unknown node composition, no renderer found");
     }
   })
 }
